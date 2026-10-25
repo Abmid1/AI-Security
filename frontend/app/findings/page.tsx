@@ -89,6 +89,7 @@ function FindingsInner() {
                     <div style={{ fontWeight: 600 }}>{f.title}</div>
                     <div className="muted" style={{ marginTop: 2 }}>
                       {projName(f.project_id)} · <span className="mono">{f.location}</span>
+                      {f.scanner && <span className="tag" style={{ marginLeft: 8 }}>{f.scanner}</span>}
                     </div>
                     {f.description && (
                       <div className="muted" style={{ marginTop: 6, fontSize: 12 }}>{f.description}</div>

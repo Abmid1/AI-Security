@@ -31,11 +31,12 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="AI Pentest Platform (Milestone 1)",
+    title="AI Pentest Platform (Milestone 2)",
     version=__version__,
     description=(
-        "Milestone 1 skeleton. Returns MOCK scan data only — no real security "
-        "scanning is implemented yet."
+        "Real scanning via modular adapters (Bandit, detect-secrets, pip-audit, "
+        "and a safe passive dynamic scanner), run in isolated workers. Mock "
+        "sample scans remain available for demonstration."
     ),
     lifespan=lifespan,
 )
@@ -58,7 +59,7 @@ app.include_router(findings.router)
 def root() -> dict:
     return {
         "name": "AI Pentest Platform",
-        "milestone": "M1",
+        "milestone": "M2",
         "mock_mode": settings.mock_mode,
-        "message": "MOCK data only. No real scanning yet. See /docs for the API.",
+        "message": "Real scanning (isolated workers) + mock samples. See /docs.",
     }

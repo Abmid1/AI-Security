@@ -4,21 +4,28 @@ An AI-assisted penetration-testing and remediation platform. See [`docs/`](./doc
 for the full design (verification engine, coverage matrix, state machine,
 evaluation plan, architecture, and the platform's own hardening spec).
 
-> **Milestone 1 status — mock data only.**
-> This milestone is the application skeleton. **No real security scanning is
-> performed.** Every scan returns fixed sample findings clearly flagged as mock.
-> Real scanning and verification come in later milestones.
+> **Milestone 2 status — real scanning (no automated fixes yet).**
+> Real scans run actual security tools (Bandit, detect-secrets, pip-audit, and a
+> safe passive dynamic checker) in **isolated worker processes**. Mock sample
+> scans remain available and are always labelled. There is still **no automated
+> code modification** — the "Generate Fix" button is a placeholder.
+> See [`docs/milestone-2-scanners.md`](./docs/milestone-2-scanners.md).
 
 ## What's here
 
 - **`backend/`** — FastAPI + SQLAlchemy. Health checks, PostgreSQL-compatible
-  models (projects, scan jobs, findings), a mock scanner, and a placeholder
+  models (projects, scan jobs, findings), a modular **scanner framework**
+  (`app/scanners/`), **isolated workers** (`app/workers/`), and a placeholder
   "Generate Fix" endpoint. Tests run on in-memory SQLite.
 - **`frontend/`** — Next.js + TypeScript. Dashboard, Targets (add web target /
-  connect repo), Scan History, and Findings (severity, confidence, evidence,
-  status, and a placeholder "Generate Fix" button).
-- **`docs/`** — the design specifications.
+  connect repo), Scan History (mock/real mode + coverage report), and Findings
+  (severity, confidence, evidence, status, scanner provenance).
+- **`docs/`** — the design specifications and the M2 scanner notes.
 - **`docker-compose.yml`** — optional local PostgreSQL.
+
+> **Upgrading from Milestone 1:** the database schema gained columns. If you ran
+> M1 and have a `backend/dev.db`, delete it so the new schema is created:
+> `del backend\dev.db` (Windows) / `rm backend/dev.db`.
 
 ## Prerequisites
 
@@ -56,8 +63,20 @@ npm run dev
 - App: http://localhost:3000
 
 Open http://localhost:3000, and you'll see the dashboard populated with the
-seeded mock scans and findings. Add a target on the **Targets** page, run a
-**mock** scan from **Scan History**, and view results under **Findings**.
+seeded mock scans and findings. Add a target on the **Targets** page, then from
+**Scan History** choose a mode and run a scan:
+
+- **Real scan of a repository:** add a **repo** target whose URL is a local
+  folder path (e.g. `D:\code\my-app`) or a reachable git URL, then run a real
+  scan. Bandit, detect-secrets and pip-audit run in an isolated worker and
+  results appear under **Findings**. Use the **Coverage** button to see which
+  scanners ran, were skipped, or errored.
+- **Real scan of a web target:** add a **web** target (confirming authorization).
+  The safe passive dynamic checker inspects the authorized origin's security
+  headers/cookies only.
+
+Real scans run in a separate process, so the row shows `queued` → `running` →
+`completed`; the page refreshes automatically while a scan is active.
 
 ## Using PostgreSQL instead of SQLite (optional)
 

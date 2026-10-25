@@ -78,11 +78,20 @@ class ScanJob(Base):
     # queued | running | completed | failed
     status: Mapped[str] = mapped_column(String(16), nullable=False, default="queued")
 
-    # Always True in M1. Kept explicit so the UI can label results honestly.
+    # "mock" (sample data) or "real" (actual scanner tools). Added in M2.
+    mode: Mapped[str] = mapped_column(String(8), nullable=False, default="mock")
+
+    # True for mock scans. For real scans this is False.
     is_mock: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
 
     # Short human-readable note about what was and was not covered.
     coverage_note: Mapped[str | None] = mapped_column(String(1000), nullable=True)
+
+    # Scanners requested (names) and the structured coverage report:
+    # per-scanner status, errors, skipped areas, dedup count. (M2)
+    requested_scanners: Mapped[list | None] = mapped_column(SA_JSON, nullable=True)
+    coverage: Mapped[dict | None] = mapped_column(SA_JSON, nullable=True)
+    error: Mapped[str | None] = mapped_column(String(1000), nullable=True)
 
     # Denormalised counts for quick dashboard display.
     findings_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
@@ -139,8 +148,12 @@ class Finding(Base):
     location: Mapped[str | None] = mapped_column(String(600), nullable=True)
     description: Mapped[str | None] = mapped_column(String(2000), nullable=True)
 
-    # Structured, redacted evidence bundle (sample data in M1).
+    # Structured, redacted evidence bundle.
     evidence: Mapped[dict | None] = mapped_column(SA_JSON, nullable=True)
+
+    # Which scanner produced this, and a dedup fingerprint. (M2)
+    scanner: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    fingerprint: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
 
     is_mock: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
 

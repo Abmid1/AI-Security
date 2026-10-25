@@ -4,3 +4,9 @@ SQLAlchemy>=2.0
 pydantic>=2.7
 httpx>=0.27
 pytest>=8.0
+
+# Scanner tools (Milestone 2). Each is wrapped by a modular adapter; if one is
+# missing at runtime the adapter reports a "skipped" area instead of failing.
+bandit>=1.7          # source-code (SAST) scanner
+detect-secrets>=1.5  # secret detection
+pip-audit>=2.7       # dependency vulnerability scanner (needs network at runtime)

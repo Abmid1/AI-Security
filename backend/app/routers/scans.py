@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from .. import crud
 from ..database import get_db
 from ..schemas import ScanCreate, ScanOut
+from ..services import scan_service
 
 router = APIRouter(prefix="/api/scans", tags=["scans"])
 
@@ -24,8 +25,9 @@ def list_scans(
 def start_scan(payload: ScanCreate, db: Session = Depends(get_db)) -> ScanOut:
     """Start a scan for a project.
 
-    NOTE: this creates a MOCK scan with sample findings. No real scanning
-    happens. The response is clearly flagged is_mock=True.
+    mode="mock" (default) returns sample data immediately. mode="real" runs the
+    actual scanner tools in an isolated worker process. Either way, scanning an
+    unauthorized target is refused.
     """
     project = crud.get_project(db, payload.project_id)
     if project is None:
@@ -36,7 +38,9 @@ def start_scan(payload: ScanCreate, db: Session = Depends(get_db)) -> ScanOut:
             status_code=403,
             detail="Project is not authorized for scanning.",
         )
-    scan = crud.create_mock_scan(db, project)
+    scan = scan_service.launch_scan(
+        db, project, mode=payload.mode.value, scanners=payload.scanners,
+    )
     return scan
 
 

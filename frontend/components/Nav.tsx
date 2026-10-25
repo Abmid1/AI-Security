@@ -18,7 +18,7 @@ export function Nav() {
         <div className="brand-mark">AI</div>
         <div>
           <div className="brand-name">PentestAI</div>
-          <div className="brand-sub">Milestone 1</div>
+          <div className="brand-sub">Milestone 2</div>
         </div>
       </div>
       <ul className="nav-list">

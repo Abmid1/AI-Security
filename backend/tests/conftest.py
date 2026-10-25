@@ -11,6 +11,7 @@ import os
 # Configure the app for testing BEFORE importing it.
 os.environ["DATABASE_URL"] = "sqlite://"  # in-memory
 os.environ["SEED_ON_STARTUP"] = "false"
+os.environ["SCAN_EXECUTION"] = "inline"  # run real scans in-process during tests
 
 import pytest
 from fastapi.testclient import TestClient

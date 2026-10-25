@@ -46,8 +46,11 @@ export const api = {
 
   listScans: (projectId?: string) =>
     request<ScanJob[]>(`/api/scans${projectId ? `?project_id=${encodeURIComponent(projectId)}` : ""}`),
-  startScan: (projectId: string) =>
-    request<ScanJob>("/api/scans", { method: "POST", body: JSON.stringify({ project_id: projectId }) }),
+  startScan: (projectId: string, mode: "mock" | "real" = "mock") =>
+    request<ScanJob>("/api/scans", {
+      method: "POST",
+      body: JSON.stringify({ project_id: projectId, mode }),
+    }),
 
   listFindings: (opts?: { scanId?: string; projectId?: string }) => {
     const qs = new URLSearchParams();

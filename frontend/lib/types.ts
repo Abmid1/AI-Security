@@ -30,12 +30,36 @@ export interface Project {
   created_at: string;
 }
 
+export interface ScannerReport {
+  name: string;
+  category: string;
+  status: "completed" | "skipped" | "error";
+  reason: string | null;
+  findings?: number;
+  errors?: string[];
+  skipped_areas?: string[];
+}
+
+export interface ScanCoverage {
+  scanners: ScannerReport[];
+  errors: string[];
+  skipped_areas: string[];
+  duplicates_removed: number;
+  findings_rejected_unsafe_path: number;
+  total_findings: number;
+  workspace_note: string | null;
+}
+
 export interface ScanJob {
   id: string;
   project_id: string;
   status: ScanStatus;
+  mode: "mock" | "real";
   is_mock: boolean;
   coverage_note: string | null;
+  coverage: ScanCoverage | null;
+  error: string | null;
+  requested_scanners: string[] | null;
   findings_count: number;
   created_at: string;
   started_at: string | null;
@@ -55,6 +79,7 @@ export interface Finding {
   location: string | null;
   description: string | null;
   evidence: Record<string, unknown> | null;
+  scanner: string | null;
   is_mock: boolean;
   created_at: string;
 }

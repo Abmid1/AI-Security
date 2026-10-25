@@ -2,8 +2,8 @@ def test_root(client):
     r = client.get("/")
     assert r.status_code == 200
     body = r.json()
-    assert body["milestone"] == "M1"
-    assert body["mock_mode"] is True
+    assert body["milestone"] == "M2"
+    assert body["mock_mode"] is False
 
 
 def test_health(client):
@@ -11,7 +11,7 @@ def test_health(client):
     assert r.status_code == 200
     body = r.json()
     assert body["status"] == "ok"
-    assert body["mock_mode"] is True
+    assert body["mock_mode"] is False
     assert "version" in body
 
 

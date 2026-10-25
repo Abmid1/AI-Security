@@ -34,8 +34,16 @@ class Settings:
         # Whether to insert sample/mock data on startup when the DB is empty.
         self.seed_on_startup: bool = _env_bool("SEED_ON_STARTUP", True)
 
-        # A flag the whole app honours: in M1 real scanning does not exist.
-        self.mock_mode: bool = True
+        # How real scans execute:
+        #   "subprocess" (default) -> spawn an isolated OS process per scan,
+        #                             outside the web server.
+        #   "inline"               -> run synchronously in-process (used by
+        #                             tests; not recommended for production).
+        self.scan_execution: str = os.getenv("SCAN_EXECUTION", "subprocess")
+
+        # Mock mode still exists (M1 sample scans remain available), but real
+        # scanning is now implemented alongside it (M2).
+        self.mock_mode: bool = False
 
 
 def _env_bool(name: str, default: bool) -> bool:

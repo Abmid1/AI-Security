@@ -100,8 +100,16 @@ class ProjectOut(BaseModel):
 # --------------------------------------------------------------------------- #
 # Scan jobs
 # --------------------------------------------------------------------------- #
+class ScanMode(str, Enum):
+    mock = "mock"
+    real = "real"
+
+
 class ScanCreate(BaseModel):
     project_id: str
+    mode: ScanMode = ScanMode.mock
+    # Optional subset of scanner names to run; None = all applicable.
+    scanners: list[str] | None = None
 
 
 class ScanOut(BaseModel):
@@ -110,8 +118,12 @@ class ScanOut(BaseModel):
     id: str
     project_id: str
     status: str
+    mode: str
     is_mock: bool
     coverage_note: str | None
+    coverage: dict | None
+    error: str | None
+    requested_scanners: list | None
     findings_count: int
     created_at: datetime
     started_at: datetime | None
@@ -136,6 +148,7 @@ class FindingOut(BaseModel):
     location: str | None
     description: str | None
     evidence: dict | None
+    scanner: str | None = None
     is_mock: bool
     created_at: datetime
 
