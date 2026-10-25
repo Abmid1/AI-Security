@@ -9,6 +9,7 @@ Companion documents:
 - [`verification-state-machine.md`](./verification-state-machine.md) — states, transitions, failure handling.
 - [`verification-architecture.md`](./verification-architecture.md) — components, interfaces, data flow.
 - [`verification-evaluation-plan.md`](./verification-evaluation-plan.md) — benchmarks, ground truth, metrics.
+- [`platform-hardening-spec.md`](./platform-hardening-spec.md) — how the platform secures *itself* (rate limiting, production auth, DB row-level isolation, secret management).
 
 ---
 
@@ -210,6 +211,17 @@ These are open questions. Each states the risk and how we'll decide.
 7. **Ground-truth maintenance.** Benchmark apps change. *Risk:* metrics drift silently. *Decision path:* pin benchmark versions; store expected findings per pinned version; re-baseline deliberately.
 
 ---
+
+## 7a. The platform hardens itself (dogfooding)
+
+This platform stores vulnerability findings, exploit evidence, repository contents, and target-test credentials — if *we* are breached we hand an attacker everyone's weaknesses. So the platform meets the same bar it demands of targets. Four controls are non-negotiable and specified in full in [`platform-hardening-spec.md`](./platform-hardening-spec.md):
+
+1. **Rate limiting** — layered edge + app limits, tight on auth and scan-trigger endpoints, `429` + `Retry-After`, shared store across instances.
+2. **Production-grade authentication** — vetted IdP/framework (not hand-rolled), Argon2id password hashing, MFA required for consequential actions, secure rotating sessions, brute-force defences, separation of duties.
+3. **Database lock-down** — PostgreSQL **Row-Level Security** so each tenant/user sees only their own rows (enforced by the DB, not just app code), least-privilege DB roles, migrations as a separate role, no app-level RLS bypass.
+4. **Secret management** — all secrets server-side (env file in dev, secrets manager in prod), never in git, never in the DB (handles only), never in the frontend bundle, never in logs/evidence (redaction). `.env.example` with placeholders + pre-commit secret scan from commit #1.
+
+Each ships with a cheap deterministic CI gate (cross-tenant read returns nothing; no secret matches in repo/logs; endpoints return `429` under load; frontend bundle has no keys). These attach to milestones M0–M2. The same four weaknesses are **also detection classes** the engine looks for in targets — see the coverage matrix (Auth & Session, Broken Access Control/IDOR, Exposed Secrets, Missing Rate Limiting).
 
 ## 8. Standards references
 

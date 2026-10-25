@@ -223,6 +223,22 @@ Each class lists the ten required facets from the task:
 
 ---
 
+## Missing Rate Limiting / Resource Controls — Tier B
+
+1. **Meaning:** endpoints accept unlimited requests, enabling brute force, credential stuffing, scraping, or cost/DoS abuse (OWASP API4: unrestricted resource consumption).
+2. **Discover first:** sensitive/expensive endpoints (login, password reset, token issue, search, export, anything triggering heavy work), and the observed response to repeated benign requests.
+3. **Deterministic detection:** send a **bounded, benign** burst of in-scope requests and observe whether limiting kicks in (`429`/`Retry-After`/backoff) before the configured threshold. Strictly rate-limited and authorized — this is an active-safe tier test, never a flood/DoS.
+4. **AI role:** identify which endpoints are sensitive/expensive and therefore *should* be limited.
+5. **Confirmation evidence (`DYN`/`CFG`):** a recorded sequence of authorized benign requests to a sensitive endpoint that are all accepted with no limiting, up to a conservative cap — plus the expectation that this endpoint class should be limited. Evidence is the request count + responses, not a stress test.
+6. **Disproof:** limiting observed (429/backoff) within an acceptable threshold.
+7. **Inconclusive/Untested:** limiting may exist only at an edge not reachable from the test vantage point ⇒ note vantage limitation; cannot safely probe ⇒ Untested.
+8. **Limitations/FP risk:** limits may be IP/edge-based and invisible from our vantage (false positive); must never cross into a real DoS to "prove" absence — cap the burst well below harm.
+9. **Safe reproduction:** small, capped, authorized bursts only; abort immediately on first sign of limiting or target distress; never sustained load.
+10. **Fix test:** re-run the capped burst → limiting now observed within threshold; regression that legitimate normal-rate traffic is unaffected.
+**WSTG:** Business Logic / DoS-adjacent testing. **ASVS:** V11/V13. **See also:** our own platform's rate limiting in [`platform-hardening-spec.md`](./platform-hardening-spec.md) §1.
+
+---
+
 ## Server-Side Template Injection (SSTI) — Tier A
 
 1. **Meaning:** input is evaluated by a server-side template engine, enabling code/expression execution.
@@ -327,7 +343,7 @@ Each class lists the ten required facets from the task:
 | SSRF, XXE | Yes **if** in-band or (Phase 2) collaborator | Inconclusive/Untested |
 | Dependencies/CVEs | Presence yes; exploitability usually no | Confirmed-presence + Inconclusive-exploitability |
 | Secrets | Presence yes; validity sometimes | Potential (validity Untested) |
-| Config/Headers, Auth/Session, Crypto/Data exposure, CSRF presence | Facts yes; impact judged | Record fact, judge severity |
+| Config/Headers, Auth/Session, Crypto/Data exposure, CSRF presence, Rate limiting | Facts yes; impact judged | Record fact, judge severity |
 | IDOR/Access-control, API object-authz | Only with a ground-truth oracle | AI-reviewed + manual-confirm |
 | Business logic, Race conditions, Deserialization RCE | Rarely/No automatically | AI-reviewed + manual-confirm |
 
