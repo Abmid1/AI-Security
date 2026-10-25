@@ -1,13 +1,17 @@
-// Honest context note. Real scanning now exists (Bandit, detect-secrets,
-// pip-audit, safe passive dynamic checks); mock sample scans remain available
-// and are always labelled.
+import { IconInfo } from "@/components/Icons";
+
+// Honest context note. Real scanning exists (Bandit, detect-secrets,
+// pip-audit, safe passive dynamic checks); mock sample scans remain
+// available and are always labelled.
 export function MockBanner() {
   return (
-    <div className="mock-banner" role="note">
-      <strong>Two scan modes.</strong> <em>Real</em> scans run actual security
-      tools in an isolated worker. <em>Mock</em> scans show labelled sample data
-      for demonstration. Findings from each are clearly marked. No automated code
-      modification is performed.
+    <div className="notice banner" role="note">
+      <IconInfo size={15} />
+      <div>
+        <strong>Two scan modes.</strong> Real scans run actual security tools in an
+        isolated worker and report honest coverage. Mock scans show labelled sample
+        data. Automated code modification is not enabled — fixes stay under your control.
+      </div>
     </div>
   );
 }

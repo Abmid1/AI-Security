@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { api, ApiError } from "@/lib/api";
 import type { Project, ScanJob } from "@/lib/types";
 import { MockBanner } from "@/components/MockBanner";
+import { IconArrowRight, IconPlay } from "@/components/Icons";
 
 export default function ScansPage() {
   const router = useRouter();
@@ -68,102 +69,132 @@ export default function ScansPage() {
     <>
       <div className="topbar">
         <div>
-          <h1>Scan History</h1>
-          <div className="sub">Real scans run in an isolated worker; mock scans return samples</div>
+          <h1>Scans</h1>
+          <div className="sub">Real scans execute in an isolated worker process</div>
         </div>
       </div>
+
       <div className="content">
         <MockBanner />
 
-        <div className="card" style={{ marginBottom: 18 }}>
-          <div className="row-between" style={{ flexWrap: "wrap", gap: 14 }}>
-            <div className="field" style={{ flex: 1, minWidth: 260 }}>
-              <label>Target</label>
-              <select value={selected} onChange={(e) => setSelected(e.target.value)}>
-                {projects.length === 0 && <option value="">No targets — add one first</option>}
-                {projects.map((p) => (
-                  <option key={p.id} value={p.id}>{p.name} ({p.kind})</option>
-                ))}
-              </select>
-            </div>
-            <div className="field" style={{ width: 160 }}>
-              <label>Mode</label>
-              <select value={mode} onChange={(e) => setMode(e.target.value as "mock" | "real")}>
-                <option value="real">Real scan</option>
-                <option value="mock">Mock (sample)</option>
-              </select>
-            </div>
-            <div style={{ alignSelf: "flex-end" }}>
-              <button className="btn" onClick={startScan} disabled={!selected || starting}>
-                {starting ? "Starting…" : mode === "real" ? "▶ Run real scan" : "▶ Run mock scan"}
-              </button>
-            </div>
+        <div className="toolbar">
+          <div className="field">
+            <label>Target</label>
+            <select value={selected} onChange={(e) => setSelected(e.target.value)}>
+              {projects.length === 0 && <option value="">No targets — add one first</option>}
+              {projects.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name} · {p.kind}
+                </option>
+              ))}
+            </select>
           </div>
-          <div className="muted" style={{ fontSize: 12, marginTop: 10 }}>
+          <div className="field" style={{ flex: "0 0 180px", minWidth: 180 }}>
+            <label>Mode</label>
+            <select value={mode} onChange={(e) => setMode(e.target.value as "mock" | "real")}>
+              <option value="real">Real scan</option>
+              <option value="mock">Mock (sample)</option>
+            </select>
+          </div>
+          <button className="btn" onClick={startScan} disabled={!selected || starting}>
+            <IconPlay size={13} />
+            {starting ? "Starting…" : mode === "real" ? "Run real scan" : "Run mock scan"}
+          </button>
+          <div className="toolbar-note">
             {mode === "real"
-              ? "Runs Bandit (code), detect-secrets, pip-audit (dependencies) for repositories, and safe passive header checks for authorized web targets. Dynamic checks require confirmed authorization and stay on the authorized origin."
-              : "Returns fixed sample findings for demonstration. Nothing is scanned."}
+              ? "Runs Bandit (Python source), detect-secrets, and pip-audit (dependencies) for repositories, plus safe passive header and cookie checks for authorized web targets. Dynamic checks require confirmed authorization and never leave the authorized origin."
+              : "Returns a fixed set of sample findings for demonstration. Nothing is scanned and no requests are made."}
           </div>
         </div>
 
-        {error && <div className="notice error">{error}</div>}
+        {error && (
+          <div className="notice error">
+            <div>
+              <strong>Scan request failed.</strong> {error}
+            </div>
+          </div>
+        )}
+
         {loading ? (
-          <div className="muted">Loading…</div>
+          <div className="skeleton" style={{ height: 260, borderRadius: 14 }} />
         ) : scans.length === 0 ? (
-          <div className="empty">No scans yet.</div>
+          <div className="empty">
+            <strong>No scans yet</strong>
+            Choose a target above and run your first scan.
+          </div>
         ) : (
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Target</th>
-                <th>Mode</th>
-                <th>Status</th>
-                <th>Findings</th>
-                <th>Finished</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {scans.map((s) => {
-                const proj = projects.find((p) => p.id === s.project_id);
-                const active = s.status === "queued" || s.status === "running";
-                return (
-                  <Fragment key={s.id}>
-                    <tr>
-                      <td>{proj?.name ?? s.project_id}</td>
-                      <td><span className="tag">{s.mode}</span></td>
-                      <td>
-                        <span className={`tag`}>{s.status}</span>
-                        {active && <span className="muted" style={{ marginLeft: 6 }}>…</span>}
-                      </td>
-                      <td>{s.findings_count}</td>
-                      <td className="muted">{fmt(s.finished_at)}</td>
-                      <td style={{ display: "flex", gap: 6 }}>
-                        <button className="btn small secondary"
-                          onClick={() => router.push(`/findings?scan=${s.id}`)}>
-                          Findings
-                        </button>
-                        {(s.coverage || s.error) && (
-                          <button className="btn small secondary"
-                            onClick={() => setExpanded(expanded === s.id ? null : s.id)}>
-                            {expanded === s.id ? "Hide" : "Coverage"}
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                    {expanded === s.id && (
+          <div className="table-wrap">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Target</th>
+                  <th>Mode</th>
+                  <th>Status</th>
+                  <th>Findings</th>
+                  <th>Finished</th>
+                  <th />
+                </tr>
+              </thead>
+              <tbody>
+                {scans.map((s) => {
+                  const proj = projects.find((p) => p.id === s.project_id);
+                  const active = s.status === "queued" || s.status === "running";
+                  return (
+                    <Fragment key={s.id}>
                       <tr>
-                        <td colSpan={6} style={{ background: "var(--panel-2)" }}>
-                          {s.error && <div className="notice error">{s.error}</div>}
-                          {s.coverage && <CoverageView scan={s} />}
+                        <td className="cell-title">{proj?.name ?? s.project_id}</td>
+                        <td>
+                          <span className={`tag mode-${s.mode}`}>{s.mode}</span>
+                        </td>
+                        <td>
+                          <span className="row" style={{ gap: 7 }}>
+                            {active && <span className="pulse" />}
+                            <span className={s.status === "failed" ? "badge sev-critical" : "tag"}>
+                              {s.status}
+                            </span>
+                          </span>
+                        </td>
+                        <td className="num">{s.findings_count}</td>
+                        <td className="muted">{fmt(s.finished_at)}</td>
+                        <td>
+                          <div className="row" style={{ gap: 7, justifyContent: "flex-end" }}>
+                            <button
+                              className="btn small ghost"
+                              onClick={() => router.push(`/findings?scan=${s.id}`)}
+                            >
+                              Findings <IconArrowRight size={12} />
+                            </button>
+                            {(s.coverage || s.error) && (
+                              <button
+                                className="btn small ghost"
+                                onClick={() => setExpanded(expanded === s.id ? null : s.id)}
+                              >
+                                {expanded === s.id ? "Hide" : "Coverage"}
+                              </button>
+                            )}
+                          </div>
                         </td>
                       </tr>
-                    )}
-                  </Fragment>
-                );
-              })}
-            </tbody>
-          </table>
+                      {expanded === s.id && (
+                        <tr>
+                          <td colSpan={6} style={{ background: "var(--bg)", padding: "18px 18px 22px" }}>
+                            {s.error && (
+                              <div className="notice error" style={{ marginBottom: 14 }}>
+                                <div>
+                                  <strong>Scan error.</strong> {s.error}
+                                </div>
+                              </div>
+                            )}
+                            {s.coverage && <CoverageView scan={s} />}
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </>
@@ -173,33 +204,58 @@ export default function ScansPage() {
 function CoverageView({ scan }: { scan: ScanJob }) {
   const c = scan.coverage!;
   return (
-    <div style={{ padding: "6px 2px" }}>
-      <div className="muted" style={{ marginBottom: 8 }}>{scan.coverage_note}</div>
-      <table className="table" style={{ marginBottom: 10 }}>
-        <thead>
-          <tr><th>Scanner</th><th>Category</th><th>Status</th><th>Findings</th><th>Note</th></tr>
-        </thead>
-        <tbody>
-          {c.scanners.map((sc) => (
-            <tr key={sc.name}>
-              <td>{sc.name}</td>
-              <td className="muted">{sc.category}</td>
-              <td>
-                <span className={`badge ${sc.status === "completed" ? "status-confirmed"
-                  : sc.status === "error" ? "sev-high" : "status-untested"}`}>
-                  {sc.status}
-                </span>
-              </td>
-              <td>{sc.findings ?? 0}</td>
-              <td className="muted" style={{ fontSize: 12 }}>{sc.reason || ""}</td>
+    <div>
+      {scan.coverage_note && (
+        <div className="dim" style={{ fontSize: 12, marginBottom: 12, lineHeight: 1.6 }}>
+          {scan.coverage_note}
+        </div>
+      )}
+
+      <div className="table-wrap" style={{ marginBottom: 12 }}>
+        <table className="table">
+          <thead>
+            <tr>
+              <th>Scanner</th>
+              <th>Category</th>
+              <th>Status</th>
+              <th>Findings</th>
+              <th>Note</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-      <div className="muted" style={{ fontSize: 12 }}>
-        Deduplicated: {c.duplicates_removed} · Unsafe paths rejected: {c.findings_rejected_unsafe_path}
+          </thead>
+          <tbody>
+            {c.scanners.map((sc) => (
+              <tr key={sc.name}>
+                <td className="cell-title mono">{sc.name}</td>
+                <td className="muted">{sc.category}</td>
+                <td>
+                  <span
+                    className={`badge ${
+                      sc.status === "completed"
+                        ? "status-confirmed"
+                        : sc.status === "error"
+                          ? "sev-critical"
+                          : "status-untested"
+                    }`}
+                  >
+                    {sc.status}
+                  </span>
+                </td>
+                <td className="num">{sc.findings ?? 0}</td>
+                <td className="muted" style={{ fontSize: 12, maxWidth: 420 }}>
+                  {sc.reason || "—"}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="dim" style={{ fontSize: 12 }}>
+        Duplicates merged: {c.duplicates_removed} · Unsafe paths rejected:{" "}
+        {c.findings_rejected_unsafe_path}
         {c.workspace_note ? ` · ${c.workspace_note}` : ""}
       </div>
+
       {c.skipped_areas.length > 0 && (
         <details className="evidence">
           <summary>Skipped areas ({c.skipped_areas.length})</summary>

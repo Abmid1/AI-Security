@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { api, ApiError } from "@/lib/api";
 import type { Project, ProjectKind } from "@/lib/types";
 import { MockBanner } from "@/components/MockBanner";
+import { IconArrowRight, IconPlus } from "@/components/Icons";
 
 export default function TargetsPage() {
   const router = useRouter();
@@ -40,7 +41,7 @@ export default function TargetsPage() {
         authorization_confirmed: authorized,
         authorization_note: authNote || null,
       });
-      setOk(`Added "${created.name}".`);
+      setOk(`Target "${created.name}" added.`);
       setName(""); setTargetUrl(""); setRepoUrl(""); setAuthNote(""); setAuthorized(false);
       load();
     } catch (e) {
@@ -58,97 +59,166 @@ export default function TargetsPage() {
       <div className="topbar">
         <div>
           <h1>Targets</h1>
-          <div className="sub">Add an authorized web target or connect a repository</div>
+          <div className="sub">Authorized web applications and connected repositories</div>
+        </div>
+        <div className="topbar-actions">
+          <button className="btn secondary" onClick={() => router.push("/scans")}>
+            Go to scans <IconArrowRight size={13} />
+          </button>
         </div>
       </div>
+
       <div className="content">
         <MockBanner />
 
-        <div className="grid cols-2">
+        <div className="grid" style={{ gridTemplateColumns: "minmax(0, 420px) minmax(0, 1fr)" }}>
           <div className="card">
-            <h3>New target</h3>
-            <form className="form" onSubmit={submit} style={{ marginTop: 14 }}>
+            <h3 className="card-title" style={{ marginBottom: 16 }}>
+              Add a target
+            </h3>
+
+            <form className="form" onSubmit={submit}>
               <div className="field">
-                <label>Type</label>
-                <select value={kind} onChange={(e) => setKind(e.target.value as ProjectKind)}>
+                <label htmlFor="kind">Type</label>
+                <select id="kind" value={kind} onChange={(e) => setKind(e.target.value as ProjectKind)}>
                   <option value="web">Web application</option>
                   <option value="repo">Code repository</option>
                 </select>
               </div>
 
               <div className="field">
-                <label>Name</label>
-                <input type="text" value={name} onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. Staging storefront" required />
+                <label htmlFor="name">Name</label>
+                <input
+                  id="name"
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Staging storefront"
+                  required
+                />
               </div>
 
               {kind === "web" ? (
                 <div className="field">
-                  <label>Target URL</label>
-                  <input type="url" value={targetUrl} onChange={(e) => setTargetUrl(e.target.value)}
-                    placeholder="https://staging.example.com" required />
-                  <span className="hint">Only targets you own or are explicitly permitted to test.</span>
+                  <label htmlFor="url">Target URL</label>
+                  <input
+                    id="url"
+                    type="url"
+                    value={targetUrl}
+                    onChange={(e) => setTargetUrl(e.target.value)}
+                    placeholder="https://staging.example.com"
+                    required
+                  />
+                  <span className="hint">
+                    Scanning stays on this exact origin. Only add systems you own or are
+                    explicitly permitted to test.
+                  </span>
                 </div>
               ) : (
                 <div className="field">
-                  <label>Repository URL</label>
-                  <input type="url" value={repoUrl} onChange={(e) => setRepoUrl(e.target.value)}
-                    placeholder="https://github.com/your-org/your-repo.git" required />
-                  <span className="hint">A repository you control.</span>
+                  <label htmlFor="repo">Repository</label>
+                  <input
+                    id="repo"
+                    type="text"
+                    value={repoUrl}
+                    onChange={(e) => setRepoUrl(e.target.value)}
+                    placeholder="https://github.com/your-org/your-repo.git"
+                    required
+                  />
+                  <span className="hint">
+                    A git URL, or a local folder path such as <span className="mono">D:\code\my-app</span>.
+                  </span>
                 </div>
               )}
 
               <div className="field">
-                <label>Authorization note (optional)</label>
-                <input type="text" value={authNote} onChange={(e) => setAuthNote(e.target.value)}
-                  placeholder="e.g. I own this system / written permission on file" />
+                <label htmlFor="note">
+                  Authorization note <span className="dim">(optional)</span>
+                </label>
+                <input
+                  id="note"
+                  type="text"
+                  value={authNote}
+                  onChange={(e) => setAuthNote(e.target.value)}
+                  placeholder="I own this system / written permission on file"
+                />
               </div>
 
               <div className="checkbox">
-                <input id="auth" type="checkbox" checked={authorized}
-                  onChange={(e) => setAuthorized(e.target.checked)} />
-                <label htmlFor="auth" style={{ fontWeight: 500 }}>
-                  I confirm I am authorized to test this target. Scanning systems
-                  without permission may be illegal.
+                <input
+                  id="auth"
+                  type="checkbox"
+                  checked={authorized}
+                  onChange={(e) => setAuthorized(e.target.checked)}
+                />
+                <label htmlFor="auth">
+                  I confirm I am authorized to test this target. Scanning systems without
+                  permission may be illegal.
                 </label>
               </div>
 
-              {error && <div className="notice error">{error}</div>}
-              {ok && <div className="notice ok">{ok}</div>}
+              {error && (
+                <div className="notice error">
+                  <div>{error}</div>
+                </div>
+              )}
+              {ok && (
+                <div className="notice ok">
+                  <div>{ok}</div>
+                </div>
+              )}
 
               <div>
                 <button className="btn" type="submit" disabled={submitting}>
+                  <IconPlus size={15} />
                   {submitting ? "Adding…" : "Add target"}
                 </button>
               </div>
             </form>
           </div>
 
-          <div className="card">
-            <h3>Existing targets ({projects.length})</h3>
+          <div className="card flush">
+            <div className="card-head">
+              <h3 className="card-title">Connected targets</h3>
+              <span className="tag">{projects.length}</span>
+            </div>
             {projects.length === 0 ? (
-              <div className="muted" style={{ marginTop: 10 }}>No targets yet.</div>
+              <div className="empty" style={{ border: "none" }}>
+                <strong>Nothing connected yet</strong>
+                Add your first target using the form.
+              </div>
             ) : (
-              <table className="table" style={{ marginTop: 10 }}>
+              <table className="table">
                 <thead>
-                  <tr><th>Name</th><th>Type</th><th>Location</th></tr>
+                  <tr>
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th>Location</th>
+                    <th>Authorized</th>
+                  </tr>
                 </thead>
                 <tbody>
                   {projects.map((p) => (
                     <tr key={p.id}>
-                      <td>{p.name}</td>
-                      <td><span className="tag">{p.kind}</span></td>
-                      <td className="mono muted">{p.target_url || p.repo_url}</td>
+                      <td className="cell-title">{p.name}</td>
+                      <td>
+                        <span className="tag">{p.kind}</span>
+                      </td>
+                      <td className="mono muted" style={{ maxWidth: 320, wordBreak: "break-all" }}>
+                        {p.target_url || p.repo_url}
+                      </td>
+                      <td>
+                        {p.authorization_confirmed ? (
+                          <span className="badge status-confirmed">confirmed</span>
+                        ) : (
+                          <span className="badge sev-high">missing</span>
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             )}
-            <div style={{ marginTop: 14 }}>
-              <button className="btn secondary" onClick={() => router.push("/scans")}>
-                Go to scans →
-              </button>
-            </div>
           </div>
         </div>
       </div>
